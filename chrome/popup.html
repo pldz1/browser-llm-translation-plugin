@@ -62,6 +62,15 @@
       .row select:focus {
         border-color: #007aff;
       }
+      .row.textarea-row {
+        align-items: flex-start;
+      }
+      .row.textarea-row label {
+        margin-top: 6px;
+      }
+      .row.textarea-row textarea {
+        flex: 1;
+      }
       textarea {
         font-size: 13px;
         padding: 6px 10px;
@@ -75,6 +84,10 @@
       }
       textarea:focus {
         border-color: #007aff;
+      }
+      textarea:disabled {
+        background-color: #f5f5f5;
+        color: #8e8e93;
       }
       .separator {
         height: 1px;
@@ -107,6 +120,33 @@
       }
       .actions {
         display: none;
+      }
+      .hint {
+        font-size: 11px;
+        color: #8e8e93;
+        margin-bottom: 12px;
+        line-height: 1.4;
+      }
+      details.collapsible {
+        margin-bottom: 16px;
+        border: 1px solid #e5e5ea;
+        border-radius: 10px;
+        background: #f9f9fb;
+        padding: 8px 12px;
+      }
+      details.collapsible summary {
+        font-size: 13px;
+        font-weight: 600;
+        color: #007aff;
+        cursor: pointer;
+        list-style: none;
+        outline: none;
+      }
+      details.collapsible summary::-webkit-details-marker {
+        display: none;
+      }
+      details.collapsible .collapsible-content {
+        margin-top: 12px;
       }
       .button {
         background: #007aff;
@@ -164,6 +204,47 @@
           <option value="editing_assistant">中英润色</option>
         </select>
       </div>
+      <details class="collapsible" id="new-mode-details">
+        <summary>提示词信息</summary>
+        <div class="collapsible-content">
+          <div class="row checkbox-row">
+            <label for="lock-prompt-checkbox">锁定提示词</label>
+            <input id="lock-prompt-checkbox" type="checkbox" checked />
+          </div>
+          <div class="row textarea-row">
+            <label for="prompt-textarea">提示词</label>
+            <textarea
+              id="prompt-textarea"
+              placeholder="提示词，可使用 {{text}} 表示需要输入的内容"
+              disabled
+            ></textarea>
+          </div>
+          <p class="hint">取消勾选“锁定提示词”即可编辑当前模式的提示词。</p>
+        </div>
+      </details>
+
+      <details class="collapsible" id="new-mode-details">
+        <summary>新增模式</summary>
+        <div class="collapsible-content">
+          <div class="row">
+            <label for="new-mode-label-input">模式名称</label>
+            <input
+              id="new-mode-label-input"
+              placeholder="例如：会议纪要中文助手"
+            />
+          </div>
+          <div class="row">
+            <label for="new-mode-prompt-textarea">提示词</label>
+          </div>
+          <div class="row textarea-button">
+            <textarea
+              id="new-mode-prompt-textarea"
+              placeholder="为新增模式填写提示词，使用 {{text}} 表示原文内容"
+            ></textarea>
+            <button id="add-mode-button" class="button">新增</button>
+          </div>
+        </div>
+      </details>
       <div class="row checkbox-row">
         <label for="replace-text-checkbox">替换文本</label>
         <input id="replace-text-checkbox" type="checkbox" />
@@ -172,9 +253,9 @@
       <div class="row textarea-button">
         <textarea
           id="translate-textarea"
-          placeholder="在此输入要翻译的文本..."
+          placeholder="在此输入文本..."
         ></textarea>
-        <button id="start-translate" class="button">翻译</button>
+        <button id="start-translate" class="button">执行</button>
       </div>
       <div class="separator"></div>
       <div class="row">
