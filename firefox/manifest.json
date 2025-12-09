@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "LLM Translator",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "大语言模型的文本翻译插件",
   "permissions": ["activeTab", "contextMenus", "storage", "tabs"],
   "background": {
