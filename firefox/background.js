@@ -51,7 +51,7 @@ async function translateText() {
         });
       }
     } catch (error) {
-      console.error("翻译失败：", error);
+      console.error("执行失败：", error);
     } finally {
       // 移除加载动画
       await browser.tabs.executeScript(tab.id, {
@@ -189,6 +189,10 @@ function processTranslation(translation, replaceFlag) {
           min-width: 64px;
           z-index: 10000000001;
       `;
+
+      // ✅ 保留换行显示（最后加）
+      div.style.whiteSpace = "pre-wrap";
+      div.style.wordBreak = "break-word";
 
       div.appendChild(closeButton);
       div.appendChild(copyButton);

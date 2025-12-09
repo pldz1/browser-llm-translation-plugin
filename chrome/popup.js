@@ -11,10 +11,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const newModePromptTextarea = document.getElementById(
     "new-mode-prompt-textarea"
   );
+  const deleteModeButton = document.getElementById("delete-mode-button");
   const translateButton = document.getElementById("start-translate");
   const translateTextarea = document.getElementById("translate-textarea");
   const translateReplace = document.getElementById("replace-text-checkbox");
   const resultSpan = document.getElementById("res-span");
+  const notification = document.getElementById("notification");
 
   // 检查是否所有关键元素都存在
   if (
@@ -27,10 +29,12 @@ document.addEventListener("DOMContentLoaded", function () {
     !addModeButton ||
     !newModeLabelInput ||
     !newModePromptTextarea ||
+    !deleteModeButton ||
     !translateButton ||
     !translateTextarea ||
     !translateReplace ||
-    !resultSpan
+    !resultSpan ||
+    !notification
   ) {
     console.error("部分必要的 DOM 元素不存在，请检查 popup.html 文件的结构。");
     // 终止后续执行，避免 null 引起错误
@@ -42,6 +46,37 @@ document.addEventListener("DOMContentLoaded", function () {
   let promptOrder = [];
   let currentTarget = "";
   let promptSaveTimer = null;
+  let notificationTimer = null;
+
+  function hideNotification() {
+    if (!notification) {
+      return;
+    }
+    notification.classList.add("notification--hidden");
+    notification.setAttribute("aria-hidden", "true");
+    notificationTimer = null;
+  }
+
+  function showNotification(message, type = "info") {
+    if (!notification) {
+      return;
+    }
+    if (notificationTimer) {
+      clearTimeout(notificationTimer);
+      notificationTimer = null;
+    }
+    notification.textContent = message;
+    notification.classList.remove(
+      "notification--hidden",
+      "notification--info",
+      "notification--error"
+    );
+    notification.classList.add(`notification--${type}`);
+    notification.setAttribute("aria-hidden", "false");
+    notificationTimer = setTimeout(() => {
+      hideNotification();
+    }, 3000);
+  }
 
   function mergePrompts(storedPrompts = {}) {
     const merged = {};
@@ -55,15 +90,27 @@ document.addEventListener("DOMContentLoaded", function () {
       const storedConfig = storedPrompts[id] || {};
       const label = storedConfig.label || defaultConfig.label || id;
       const prompt = storedConfig.prompt || defaultConfig.prompt || "";
+      const mergedId = storedConfig.id || defaultConfig.id || id;
+      const canDelete = storedConfig.hasOwnProperty("canDelete")
+        ? storedConfig.canDelete
+        : defaultConfig.hasOwnProperty("canDelete")
+        ? defaultConfig.canDelete
+        : !defaultPrompts[id];
       if (!storedPrompts[id] && defaultPrompts[id]) {
         changed = true;
       } else if (
         (!storedConfig.label && defaultConfig.label) ||
-        (!storedConfig.prompt && defaultConfig.prompt)
+        (!storedConfig.prompt && defaultConfig.prompt) ||
+        (storedConfig.canDelete === undefined &&
+          defaultConfig.canDelete !== undefined) ||
+        (!storedConfig.id && defaultConfig.id)
       ) {
         changed = true;
       }
-      merged[id] = { label, prompt };
+      if (!storedConfig.hasOwnProperty("canDelete")) {
+        changed = true;
+      }
+      merged[id] = { label, prompt, id: mergedId, canDelete };
     });
     return { merged, changed };
   }
@@ -124,6 +171,15 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       promptTextarea.value = "";
     }
+    updateDeleteButtonState(targetId);
+  }
+
+  function updateDeleteButtonState(targetId) {
+    if (!targetId || !promptConfigs[targetId]) {
+      deleteModeButton.disabled = true;
+      return;
+    }
+    deleteModeButton.disabled = !promptConfigs[targetId].canDelete;
   }
 
   function schedulePromptSave(immediate = false) {
@@ -222,7 +278,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const target = targetSelect.value;
     currentTarget = target && promptConfigs[target] ? target : "";
     chrome.storage.local.set({ target: target }, function () {
-      console.log("目标语言更新成功: ", target);
+      console.log("目标更新成功: ", target);
     });
     updatePromptArea(currentTarget);
   });
@@ -247,13 +303,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   promptTextarea.addEventListener("input", function () {
     if (!currentTarget || promptLockCheckbox.checked) {
+      showNotification("请选择有效的模式!", "error");
       return;
     }
     if (!promptConfigs[currentTarget]) {
-      promptConfigs[currentTarget] = {
-        label: currentTarget,
-        prompt: "",
-      };
+      showNotification("模式数据无效, 请删除这个模式!", "error");
+      return;
     }
     promptConfigs[currentTarget].prompt = promptTextarea.value;
     schedulePromptSave(false);
@@ -272,7 +327,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const prompt = newModePromptTextarea.value.trim();
 
     if (!label || !prompt) {
-      alert("请完整填写模式名称和提示词内容。");
+      showNotification("请完整填写模式名称和提示词内容。", "error");
       return;
     }
 
@@ -280,6 +335,8 @@ document.addEventListener("DOMContentLoaded", function () {
       ...promptConfigs,
       [id]: {
         label: label,
+        id: id,
+        canDelete: true,
         prompt: prompt,
       },
     };
@@ -289,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function () {
     currentTarget = id;
     targetSelect.value = id;
     chrome.storage.local.set({ target: id }, function () {
-      console.log("新增模式已设为当前互译模式:", id);
+      console.log("新增模式已设为:", id);
     });
     updatePromptArea(currentTarget);
     promptLockCheckbox.checked = false;
@@ -298,6 +355,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
     newModeLabelInput.value = "";
     newModePromptTextarea.value = "";
+  });
+
+  deleteModeButton.addEventListener("click", function () {
+    if (
+      !currentTarget ||
+      !promptConfigs[currentTarget] ||
+      !promptConfigs[currentTarget].canDelete
+    ) {
+      return;
+    }
+
+    const removedId = currentTarget;
+    const updatedConfigs = { ...promptConfigs };
+    delete updatedConfigs[removedId];
+    promptConfigs = updatedConfigs;
+    promptOrder = promptOrder.filter((id) => id !== removedId);
+    persistPrompts();
+
+    const nextTarget = promptOrder.length > 0 ? promptOrder[0] : "";
+    currentTarget = nextTarget;
+    renderTargetOptions(currentTarget);
+    targetSelect.value = currentTarget;
+    chrome.storage.local.set({ target: currentTarget }, function () {
+      console.log("已删除模式:", removedId);
+    });
+    updatePromptArea(currentTarget);
+    promptTextarea.disabled = promptLockCheckbox.checked;
   });
 
   // 点击翻译按钮时执行

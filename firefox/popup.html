@@ -13,7 +13,6 @@
       }
       html,
       body {
-        overflow: hidden;
         background-color: #f2f2f7;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           Helvetica, Arial, sans-serif;
@@ -167,6 +166,46 @@
       .button:hover:not(:disabled) {
         background: #005bb5;
       }
+      .button.danger-button {
+        background: #ff3b30;
+        box-shadow: 0 2px 6px rgba(255, 59, 48, 0.25);
+      }
+      .button.danger-button:disabled {
+        background: #a3a3a8;
+        box-shadow: none;
+      }
+      .button.danger-button:hover:not(:disabled) {
+        background: #d70015;
+      }
+      .notification {
+        position: fixed;
+        top: 32px;
+        left: 8px;
+        width: 326px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        line-height: 1.4;
+        border: 1px solid #d1d1d6;
+        background: #f2f2f7;
+        color: #3c3c43;
+        opacity: 1;
+        transition: opacity 0.2s ease;
+      }
+      .notification.notification--error {
+        background: #fff2f0;
+        border-color: #ff3b30;
+        color: #7a1c1c;
+      }
+      .notification.notification--info {
+        background: #f0f6ff;
+        border-color: #0a84ff;
+        color: #004080;
+      }
+      .notification.notification--hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
       .result {
         background: #f7f7f8;
         padding: 10px;
@@ -184,6 +223,13 @@
   </head>
   <body>
     <div class="container">
+      <div
+        id="notification"
+        class="notification notification--hidden"
+        role="status"
+        aria-live="polite"
+        aria-hidden="true"
+      ></div>
       <div class="row">
         <label for="endpoint-input">终端节点</label>
         <input id="endpoint-input" placeholder="https://..." />
@@ -204,13 +250,14 @@
           <option value="editing_assistant">中英润色</option>
         </select>
       </div>
-      <details class="collapsible" id="new-mode-details">
+      <details class="collapsible">
         <summary>提示词信息</summary>
         <div class="collapsible-content">
           <div class="row checkbox-row">
             <label for="lock-prompt-checkbox">锁定提示词</label>
             <input id="lock-prompt-checkbox" type="checkbox" checked />
           </div>
+          <p class="hint">取消勾选“锁定提示词”即可编辑当前模式的提示词。</p>
           <div class="row textarea-row">
             <label for="prompt-textarea">提示词</label>
             <textarea
@@ -219,11 +266,13 @@
               disabled
             ></textarea>
           </div>
-          <p class="hint">取消勾选“锁定提示词”即可编辑当前模式的提示词。</p>
+          <button id="delete-mode-button" class="button danger-button" disabled>
+            删除当前模式
+          </button>
         </div>
       </details>
 
-      <details class="collapsible" id="new-mode-details">
+      <details class="collapsible">
         <summary>新增模式</summary>
         <div class="collapsible-content">
           <div class="row">

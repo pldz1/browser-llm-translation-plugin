@@ -54,7 +54,7 @@ async function translateText() {
         });
       }
     } catch (error) {
-      console.error("翻译过程中出现错误：", error);
+      console.error("执行过程中出现错误：", error);
     } finally {
       // 无论成功与否，都移除 loader
       await chrome.scripting.executeScript({
@@ -194,6 +194,10 @@ function processTranslation(translation, replaceFlag) {
           min-width: 64px;
           z-index: 10000000001;
       `;
+
+      // ✅ 保留换行显示（最后加）
+      div.style.whiteSpace = "pre-wrap";
+      div.style.wordBreak = "break-word";
 
       div.appendChild(closeButton);
       div.appendChild(copyButton);
