@@ -76,7 +76,12 @@ async function fetchLLM(data) {
       if (!contentText) {
         return "尚未为该模式配置提示词";
       }
-      const response = await fetch(`${endpoint}`, {
+
+      const validEndpoint = endpoint.includes("{{modelName}}")
+        ? endpoint.replace("{{modelName}}", modelName)
+        : endpoint;
+
+      const response = await fetch(`${validEndpoint}`, {
         headers: {
           accept: "application/json",
           "api-key": `${apikey}`,

@@ -232,7 +232,7 @@
       ></div>
       <div class="row">
         <label for="endpoint-input">终端节点</label>
-        <input id="endpoint-input" placeholder="https://..." />
+        <input id="endpoint-input" placeholder="https://...{{modelName}}" />
       </div>
       <div class="row">
         <label for="apikey-input">API Key</label>
@@ -249,6 +249,9 @@
           <option value="cn_en_translation">中英互译</option>
           <option value="editing_assistant">中英润色</option>
         </select>
+      </div>
+      <div class="row">
+        <p class="hint">终端节点可以使用`{{modelName}}`作为模型名称的保留字</p>
       </div>
       <details class="collapsible">
         <summary>提示词信息</summary>
